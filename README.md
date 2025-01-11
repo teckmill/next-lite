@@ -2,6 +2,11 @@
 
 A lightweight alternative to Next.js that prioritizes speed and simplicity while maintaining essential features.
 
+[![GitHub](https://img.shields.io/github/license/teckmill/next-lite)](https://github.com/teckmill/next-lite/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/next-lite)](https://www.npmjs.com/package/next-lite)
+[![GitHub stars](https://img.shields.io/github/stars/teckmill/next-lite)](https://github.com/teckmill/next-lite/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/teckmill/next-lite)](https://github.com/teckmill/next-lite/issues)
+
 ## Features
 
 - 🚀 Lightweight (<50KB core)
@@ -12,9 +17,16 @@ A lightweight alternative to Next.js that prioritizes speed and simplicity while
 - 📦 TypeScript support
 - 🎯 Zero-config API routes
 
-## Getting Started
+## Quick Start
 
 ```bash
+# Create a new Next-Lite project
+npx create-next-lite-app my-app
+
+# Or clone the example project
+git clone https://github.com/teckmill/next-lite.git
+cd next-lite
+
 # Install dependencies
 npm install
 
@@ -46,43 +58,31 @@ Create pages by adding files to the `pages` directory:
 
 ```tsx
 // pages/index.tsx
-import { withPage } from 'next-lite';
+import React from 'react';
+import styles from '../styles/Home.module.css';
 
-function HomePage({ data }) {
-  return <h1>{data.title}</h1>;
-}
+const HomePage: React.FC = () => {
+  return (
+    <div className={styles.container}>
+      <h1>Welcome to Next-Lite!</h1>
+    </div>
+  );
+};
 
-export default withPage(HomePage, {
-  renderMode: 'ssg',
-  getStaticProps: async () => {
-    return {
-      data: { title: 'Welcome to Next-Lite!' }
-    };
-  }
-});
+export default HomePage;
 ```
 
-## API Routes
+## Contributing
 
-Create API endpoints in the `pages/api` directory:
-
-```typescript
-// pages/api/hello.ts
-import { createApiRoute } from 'next-lite';
-
-export default createApiRoute({
-  get: async (req, res) => {
-    res.json({ message: 'Hello from Next-Lite!' });
-  }
-});
-```
-
-## Rendering Modes
-
-- **Static Site Generation (SSG)**: Pre-renders pages at build time
-- **Server-Side Rendering (SSR)**: Renders pages on each request
-- **Client-Side Rendering (CSR)**: Renders pages in the browser
+We welcome contributions! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- 📚 [Documentation](https://github.com/teckmill/next-lite/wiki)
+- 🐛 [Report Bug](https://github.com/teckmill/next-lite/issues)
+- 💡 [Request Feature](https://github.com/teckmill/next-lite/issues)
+- 💬 [Discussions](https://github.com/teckmill/next-lite/discussions)

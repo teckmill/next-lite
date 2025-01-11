@@ -11,6 +11,17 @@ const HomePage: React.FC = () => {
           <p className={styles.description}>
             A lightweight, blazing-fast alternative to Next.js that prioritizes speed and simplicity
           </p>
+          <div className={styles.badges}>
+            <a href="https://github.com/teckmill/next-lite" target="_blank" rel="noopener noreferrer">
+              <img src="https://img.shields.io/github/stars/teckmill/next-lite?style=social" alt="GitHub stars" />
+            </a>
+            <a href="https://github.com/teckmill/next-lite/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">
+              <img src="https://img.shields.io/github/license/teckmill/next-lite" alt="License" />
+            </a>
+            <a href="https://www.npmjs.com/package/next-lite" target="_blank" rel="noopener noreferrer">
+              <img src="https://img.shields.io/npm/v/next-lite" alt="npm version" />
+            </a>
+          </div>
           <div className={styles.stats}>
             <div className={styles.stat}>
               <span className={styles.statValue}>{"<"} 50KB</span>
@@ -24,6 +35,14 @@ const HomePage: React.FC = () => {
               <span className={styles.statValue}>Zero</span>
               <span className={styles.statLabel}>Config</span>
             </div>
+          </div>
+          <div className={styles.cta}>
+            <a href="https://github.com/teckmill/next-lite" className={styles.primaryButton} target="_blank" rel="noopener noreferrer">
+              View on GitHub
+            </a>
+            <a href="https://github.com/teckmill/next-lite/wiki" className={styles.secondaryButton} target="_blank" rel="noopener noreferrer">
+              Documentation
+            </a>
           </div>
         </header>
 
@@ -48,65 +67,27 @@ const HomePage: React.FC = () => {
               <h3>🎯 Simple by Design</h3>
               <p>Focus on what matters - building your app, not configuring your framework</p>
               <div className={styles.code}>
-                Config lines: <span>{"<"} 10</span>
+                Config lines: <span>0</span>
               </div>
               <ul className={styles.featureList}>
-                <li>Intuitive file-based routing</li>
-                <li>Automatic TypeScript support</li>
-                <li>Built-in CSS Modules</li>
                 <li>Zero configuration needed</li>
+                <li>Intuitive file-based routing</li>
+                <li>TypeScript support out of the box</li>
+                <li>Automatic code optimization</li>
               </ul>
             </div>
 
             <div className={styles.card}>
-              <h3>🔄 Modern Development</h3>
-              <p>Enjoy a modern development experience with the latest features</p>
+              <h3>🚀 Production Ready</h3>
+              <p>Built for modern web development with all the features you need</p>
               <div className={styles.code}>
-                <span>npm create next-lite-app</span>
+                Bundle size: <span>{"<"} 50KB</span>
               </div>
               <ul className={styles.featureList}>
-                <li>React 18+ support</li>
-                <li>TypeScript by default</li>
-                <li>CSS Modules & Sass</li>
-                <li>API routes support</li>
-              </ul>
-            </div>
-
-            <div className={styles.card}>
-              <h3>📦 Production Ready</h3>
-              <p>Built for real-world applications with essential features included</p>
-              <div className={styles.code}>
-                <span>npm run build</span>
-              </div>
-              <ul className={styles.featureList}>
-                <li>Static Site Generation (SSG)</li>
-                <li>Server-Side Rendering (SSR)</li>
-                <li>Incremental Static Regeneration</li>
-                <li>Edge Function Support</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.comparison}>
-          <h2 className={styles.sectionTitle}>Why Next-Lite?</h2>
-          <div className={styles.comparisonGrid}>
-            <div className={styles.comparisonCard}>
-              <h3>🚀 Performance</h3>
-              <ul className={styles.featureList}>
-                <li>50% faster builds than Next.js</li>
-                <li>30% smaller bundle sizes</li>
-                <li>Instant hot module replacement</li>
-                <li>Optimized production builds</li>
-              </ul>
-            </div>
-            <div className={styles.comparisonCard}>
-              <h3>💡 Developer Experience</h3>
-              <ul className={styles.featureList}>
-                <li>Simpler configuration</li>
-                <li>Clearer error messages</li>
-                <li>Better debugging tools</li>
-                <li>Faster feedback loop</li>
+                <li>SSR & SSG support</li>
+                <li>API routes</li>
+                <li>CSS Modules</li>
+                <li>Image optimization</li>
               </ul>
             </div>
           </div>
@@ -114,26 +95,34 @@ const HomePage: React.FC = () => {
 
         <section className={styles.getStarted}>
           <h2 className={styles.sectionTitle}>Get Started</h2>
-          <div className={styles.commandCard}>
-            <div className={styles.code}>
-              <span>npx create-next-lite-app my-app</span>
-            </div>
-            <p className={styles.commandDescription}>
-              Create a new Next-Lite project with a single command. Includes TypeScript, ESLint, and CSS Modules configured out of the box.
-            </p>
-          </div>
-          <div className={styles.links}>
-            <a href="https://github.com/next-lite/next-lite" className={styles.link}>
-              📚 Documentation
-            </a>
-            <a href="https://github.com/next-lite/next-lite" className={styles.link}>
-              ⭐️ GitHub
-            </a>
-            <a href="https://github.com/next-lite/next-lite/examples" className={styles.link}>
-              🎯 Examples
-            </a>
+          <div className={styles.terminal}>
+            <code>
+              <span className={styles.comment}># Create a new project</span>
+              <br />
+              npx create-next-lite-app my-app
+              <br /><br />
+              <span className={styles.comment}># Or clone the example</span>
+              <br />
+              git clone https://github.com/teckmill/next-lite.git
+              <br />
+              cd next-lite
+              <br />
+              npm install
+              <br />
+              npm run dev
+            </code>
           </div>
         </section>
+
+        <footer className={styles.footer}>
+          <div className={styles.links}>
+            <a href="https://github.com/teckmill/next-lite" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://github.com/teckmill/next-lite/wiki" target="_blank" rel="noopener noreferrer">Documentation</a>
+            <a href="https://github.com/teckmill/next-lite/issues" target="_blank" rel="noopener noreferrer">Issues</a>
+            <a href="https://github.com/teckmill/next-lite/discussions" target="_blank" rel="noopener noreferrer">Discussions</a>
+          </div>
+          <p>Made with ❤️ by <a href="https://github.com/teckmill" target="_blank" rel="noopener noreferrer">Teckmill</a></p>
+        </footer>
       </main>
     </div>
   );

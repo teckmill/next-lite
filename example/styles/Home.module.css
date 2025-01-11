@@ -282,6 +282,114 @@
   transform: translateY(-2px);
 }
 
+.badges {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.badges img {
+  height: 20px;
+}
+
+.cta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.primaryButton,
+.secondaryButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.primaryButton {
+  background: var(--primary);
+  color: white;
+  border: none;
+}
+
+.primaryButton:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.secondaryButton:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.terminal {
+  background: var(--background-dark);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 800px;
+  margin: 2rem auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.terminal code {
+  color: var(--text-light);
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.comment {
+  color: var(--text-secondary);
+}
+
+.footer {
+  width: 100%;
+  padding: 4rem 0 2rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  margin-top: 4rem;
+}
+
+.links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.links a:hover {
+  color: var(--primary);
+}
+
+.footer p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.footer p a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.footer p a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 2rem 1rem;
