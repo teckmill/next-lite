@@ -189,4 +189,4 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## License
 
-Next-Lite is [MIT licensed](LICENSE.md).
+Next-Lite is [MIT licensed](../LICENSE).
