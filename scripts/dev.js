@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const WebSocket = require('ws');
+const net = require('net');
 
 // MIME types mapping
 const mimeTypes = {
@@ -24,7 +25,171 @@ const mimeTypes = {
   '.wasm': 'application/wasm'
 };
 
-// CSS Modules Plugin
+// Find available port
+async function findAvailablePort(startPort) {
+  const isPortAvailable = (port) => {
+    return new Promise((resolve) => {
+      const server = net.createServer();
+      server.once('error', () => resolve(false));
+      server.once('listening', () => {
+        server.close(() => resolve(true));
+      });
+      server.listen(port);
+    });
+  };
+
+  let port = startPort;
+  while (!(await isPortAvailable(port))) {
+    port++;
+  }
+  return port;
+}
+
+// Error Overlay HTML
+const errorOverlayScript = `
+  (function() {
+    const styles = \`
+      .next-lite-error-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        color: #ff5555;
+        font-family: monospace;
+        padding: 2rem;
+        z-index: 9999;
+        overflow: auto;
+      }
+      .next-lite-error-overlay pre {
+        background: #1a1a1a;
+        padding: 1rem;
+        border-radius: 4px;
+        white-space: pre-wrap;
+      }
+      .next-lite-error-overlay .close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        color: white;
+        cursor: pointer;
+      }
+    \`;
+
+    function showError(error) {
+      const overlay = document.createElement('div');
+      overlay.className = 'next-lite-error-overlay';
+      
+      const close = document.createElement('div');
+      close.className = 'close';
+      close.textContent = '✕';
+      close.onclick = () => overlay.remove();
+      
+      const content = document.createElement('pre');
+      content.textContent = error;
+      
+      const style = document.createElement('style');
+      style.textContent = styles;
+      
+      overlay.appendChild(style);
+      overlay.appendChild(close);
+      overlay.appendChild(content);
+      document.body.appendChild(overlay);
+    }
+
+    window.showNextLiteError = showError;
+  })();
+`;
+
+// Enhanced Live Reload with HMR
+const hmrClientScript = `
+  (function() {
+    const socket = new WebSocket('ws://localhost:$PORT');
+    let isConnected = false;
+    
+    socket.onopen = () => {
+      console.log('[Next-Lite] Connected to HMR server');
+      isConnected = true;
+    };
+    
+    socket.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      
+      switch(data.type) {
+        case 'reload':
+          console.log('[Next-Lite] Full reload requested');
+          window.location.reload();
+          break;
+          
+        case 'hmr':
+          console.log('[Next-Lite] Hot updating modules:', data.modules);
+          try {
+            data.modules.forEach(mod => {
+              const oldModule = window.__next_lite_modules__[mod.id];
+              if (oldModule && oldModule.hot) {
+                oldModule.hot.accept();
+                if (mod.css) {
+                  updateStyle(mod.id, mod.css);
+                }
+                if (mod.js) {
+                  updateModule(mod.id, mod.js);
+                }
+              }
+            });
+          } catch (error) {
+            console.error('[Next-Lite] HMR update failed:', error);
+            window.showNextLiteError(error.stack);
+          }
+          break;
+          
+        case 'error':
+          console.error('[Next-Lite] Build error:', data.error);
+          window.showNextLiteError(data.error);
+          break;
+      }
+    };
+    
+    socket.onclose = function() {
+      console.log('[Next-Lite] Disconnected. Attempting to reconnect...');
+      isConnected = false;
+      setTimeout(() => {
+        if (!isConnected) {
+          window.location.reload();
+        }
+      }, 1000);
+    };
+    
+    function updateStyle(id, css) {
+      const existingStyle = document.querySelector(\`style[data-module-id="\${id}"]\`);
+      if (existingStyle) {
+        existingStyle.textContent = css;
+      } else {
+        const style = document.createElement('style');
+        style.setAttribute('data-module-id', id);
+        style.textContent = css;
+        document.head.appendChild(style);
+      }
+    }
+    
+    function updateModule(id, code) {
+      const mod = window.__next_lite_modules__[id];
+      if (mod) {
+        try {
+          eval(code);
+          mod.hot.status = 'idle';
+        } catch (error) {
+          mod.hot.status = 'fail';
+          throw error;
+        }
+      }
+    }
+    
+    window.__next_lite_modules__ = window.__next_lite_modules__ || {};
+  })();
+`;
+
+// CSS Modules Plugin with source maps
 const cssModulesPlugin = {
   name: 'css-modules',
   setup(build) {
@@ -73,162 +238,130 @@ const cssModulesPlugin = {
   },
 };
 
-// Live Reload Script
-const livereloadScript = `
-  (function() {
-    const socket = new WebSocket('ws://localhost:8080');
-    
-    socket.onmessage = function(event) {
-      if (event.data === 'reload') {
-        console.log('Reloading...');
-        window.location.reload();
-      }
-    };
-
-    socket.onclose = function() {
-      console.log('Live reload disconnected. Attempting to reconnect...');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    };
-  })();
-`;
-
 async function startDevServer() {
   try {
-    // Create WebSocket server for live reload
-    const wss = new WebSocket.Server({ port: 8080 });
-    let sockets = new Set();
-
+    // Find available ports
+    const wsPort = await findAvailablePort(8080);
+    const httpPort = await findAvailablePort(3000);
+    
+    // Create WebSocket server for HMR
+    const wss = new WebSocket.Server({ port: wsPort });
+    const sockets = new Set();
+    
     wss.on('connection', (socket) => {
       sockets.add(socket);
-      socket.on('close', () => sockets.delete(socket));
+      socket.on('close', () => sockets.remove(socket));
     });
 
-    // Ensure public directory exists
-    if (!fs.existsSync('public')) {
-      fs.mkdirSync('public');
-    }
-    if (!fs.existsSync('public/dist')) {
-      fs.mkdirSync('public/dist');
-    }
-
-    // Write live reload script
-    await fs.promises.writeFile('public/dist/livereload.js', livereloadScript);
-
-    // Initial build
-    const service = await esbuild.context({
-      entryPoints: ['src/index.ts'],
+    // Create build context
+    const ctx = await esbuild.context({
+      entryPoints: ['./pages/**/*.{tsx,ts,jsx,js}'],
       bundle: true,
-      outdir: 'public/dist',
-      platform: 'browser',
-      format: 'esm',
-      splitting: false,
+      outdir: '.next',
       sourcemap: true,
-      loader: {
-        '.ts': 'ts',
-        '.tsx': 'tsx',
-        '.svg': 'text'
-      },
-      plugins: [
-        cssModulesPlugin,
-        {
-          name: 'live-reload',
-          setup(build) {
-            build.onEnd((result) => {
-              if (result.errors.length === 0) {
-                console.log('Build completed successfully. Notifying browsers...');
-                sockets.forEach(socket => {
-                  if (socket.readyState === WebSocket.OPEN) {
-                    socket.send('reload');
-                  }
-                });
-              } else {
-                console.error('Build failed:', result.errors);
-              }
-            });
-          },
-        }
-      ],
+      format: 'esm',
+      splitting: true,
+      plugins: [cssModulesPlugin],
       define: {
         'process.env.NODE_ENV': '"development"'
+      },
+      loader: {
+        '.png': 'dataurl',
+        '.svg': 'dataurl',
+        '.jpg': 'dataurl',
+        '.gif': 'dataurl',
       }
     });
 
-    // Do an initial build
-    await service.rebuild();
+    // Watch for changes
+    ctx.watch({
+      async onRebuild(error, result) {
+        if (error) {
+          console.error('Build failed:', error);
+          sockets.forEach(socket => {
+            socket.send(JSON.stringify({
+              type: 'error',
+              error: error.message
+            }));
+          });
+        } else {
+          console.log('Build succeeded');
+          const updates = result.outputFiles.map(file => ({
+            id: path.relative(process.cwd(), file.path),
+            js: file.text,
+            css: file.cssText
+          }));
+          
+          sockets.forEach(socket => {
+            socket.send(JSON.stringify({
+              type: 'hmr',
+              modules: updates
+            }));
+          });
+        }
+      }
+    });
 
     // Create HTTP server
     const server = http.createServer(async (req, res) => {
       try {
-        // Default to index.html for root path
-        let filePath = req.url === '/' ? '/index.html' : req.url;
-        filePath = path.join(process.cwd(), 'public', filePath);
-
-        // Get file extension and MIME type
-        const ext = path.extname(filePath);
-        let contentType = mimeTypes[ext] || 'application/octet-stream';
-
-        // Special handling for module scripts
-        if (filePath.endsWith('.js') && filePath.includes('/dist/')) {
-          contentType = 'text/javascript; charset=utf-8';
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const filepath = path.join(process.cwd(), url.pathname === '/' ? '/index.html' : url.pathname);
+        const ext = path.extname(filepath);
+        
+        // Set CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        
+        if (req.method === 'OPTIONS') {
+          res.writeHead(200);
+          res.end();
+          return;
         }
 
-        // Check if file exists
-        if (fs.existsSync(filePath)) {
-          const content = await fs.promises.readFile(filePath, 'utf8');
-          
-          // Inject live reload script for HTML files
-          if (ext === '.html') {
-            const modifiedContent = content.replace(
-              '</body>',
-              '<script src="/dist/livereload.js"></script></body>'
-            );
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(modifiedContent);
-          } else {
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content);
-          }
-        } else {
-          res.writeHead(404);
-          res.end('File not found');
+        // Inject HMR client
+        if (url.pathname === '/') {
+          let html = await fs.promises.readFile(filepath, 'utf8');
+          const injectedScripts = `
+            <script>${errorOverlayScript}</script>
+            <script>${hmrClientScript.replace('$PORT', wsPort)}</script>
+          `;
+          html = html.replace('</head>', `${injectedScripts}</head>`);
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(html);
+          return;
         }
+
+        // Serve static files
+        const contentType = mimeTypes[ext] || 'application/octet-stream';
+        const content = await fs.promises.readFile(filepath);
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(content);
       } catch (error) {
-        console.error('Server error:', error);
-        res.writeHead(500);
-        res.end('Internal server error');
+        if (error.code === 'ENOENT') {
+          res.writeHead(404);
+          res.end('Not found');
+        } else {
+          console.error('Server error:', error);
+          res.writeHead(500);
+          res.end('Internal server error');
+        }
       }
     });
 
-    // Start the server
-    const PORT = 3001;
-    server.listen(PORT, () => {
-      console.log(`Development server running at http://localhost:${PORT}`);
+    server.listen(httpPort, () => {
+      console.log(`
+🚀 Next-Lite dev server running at:
+   > Local:    http://localhost:${httpPort}
+   > HMR:      ws://localhost:${wsPort}
+      `);
     });
 
-    // Watch for changes
-    await service.watch();
-
-    // Handle shutdown
-    const cleanup = async () => {
-      console.log('Shutting down...');
-      await service.dispose();
-      server.close();
-      wss.close();
-      process.exit(0);
-    };
-
-    process.on('SIGINT', cleanup);
-    process.on('SIGTERM', cleanup);
-
   } catch (error) {
-    console.error('Failed to start development server:', error);
+    console.error('Failed to start dev server:', error);
     process.exit(1);
   }
 }
 
-startDevServer().catch(error => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+startDevServer();
